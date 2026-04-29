@@ -21,11 +21,7 @@ export function PromptCard({
       className="group block rounded-3xl border border-[color:var(--color-ink-200)]/70 bg-[color:var(--color-cream-100)]/50 p-5 transition hover:border-[color:var(--color-sage-300)] hover:bg-[color:var(--color-cream-100)] sm:p-6"
     >
       <div className="flex items-center justify-between">
-        <Link
-          href={`/u/${author.username}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-2.5"
-        >
+        <div className="flex items-center gap-2.5">
           <Avatar src={author.avatar} name={author.name} size={36} />
           <div className="leading-tight">
             <div className="text-sm font-medium text-[color:var(--color-ink-900)]">
@@ -35,7 +31,7 @@ export function PromptCard({
               @{author.username} · {timeAgo(prompt.createdAt)}
             </div>
           </div>
-        </Link>
+        </div>
         <CategoryChip category={prompt.category as PromptCategory} />
       </div>
 
