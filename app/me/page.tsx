@@ -54,85 +54,93 @@ export default async function MePage() {
         </form>
       </section>
 
-      <section>
-        <div className="flex items-end justify-between">
+      {profile.prompts.length === 0 ? (
+        <section className="space-y-5 rounded-3xl bg-[color:var(--color-ink-900)] p-6 text-[color:var(--color-cream-100)] sm:p-8">
           <div>
-            <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">
-              The mirror
-            </h2>
-            <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
-              Reflections you&apos;ve pinned. The picture of you, built by the
-              people who know you.
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--color-cream-200)]/60">
+              Your next move
             </p>
-          </div>
-        </div>
-        {pinned.length === 0 ? (
-          <div className="mt-5">
-            <EmptyState
-              title="Nothing pinned yet."
-              body="Pin the responses that hit something true. They show up here as a portrait of you over time."
-            />
-          </div>
-        ) : (
-          <div className="mt-5 space-y-3">
-            {pinned.map((r) => (
-              <ResponseCard
-                key={r.id}
-                response={r}
-                responder={r.responder}
-                canPin
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <div className="flex items-end justify-between">
-          <div>
-            <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">
-              Your questions
+            <h2 className="mt-2 font-serif text-2xl leading-snug">
+              Ask your first question.
             </h2>
-            <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
-              Tap any to read what people wrote and pin what resonates.
+            <p className="mt-2 text-sm text-[color:var(--color-cream-200)]/80">
+              You can&apos;t see what people quietly notice about you until
+              you ask. Pick one thing you&apos;re actually curious about — a
+              strength, a first impression, something you might be missing.
             </p>
           </div>
           <Link
             href="/create"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-4 py-2 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-cream-50)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-ink-900)] transition hover:bg-[color:var(--color-sage-300)]"
           >
-            <Plus size={14} /> Ask
+            <Plus size={14} /> Ask your first question
           </Link>
-        </div>
+        </section>
+      ) : (
+        <>
+          <section>
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">
+                  The mirror
+                </h2>
+                <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
+                  Reflections you&apos;ve pinned. The picture of you, built by
+                  the people who know you.
+                </p>
+              </div>
+            </div>
+            {pinned.length === 0 ? (
+              <div className="mt-5">
+                <EmptyState
+                  title="Nothing pinned yet."
+                  body="Open one of your questions below and pin the responses that hit something true. They&apos;ll show up here over time."
+                />
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {pinned.map((r) => (
+                  <ResponseCard
+                    key={r.id}
+                    response={r}
+                    responder={r.responder}
+                    canPin
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-        {profile.prompts.length === 0 ? (
-          <div className="mt-5">
-            <EmptyState
-              title="No questions yet."
-              body="The whole point of this place is finding out something about yourself you can't see alone. Start with one question."
-              action={
-                <Link
-                  href="/create"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
-                >
-                  <Plus size={14} /> Ask your first question
-                </Link>
-              }
-            />
-          </div>
-        ) : (
-          <div className="mt-5 space-y-4">
-            {profile.prompts.map((p) => (
-              <PromptCard
-                key={p.id}
-                prompt={p}
-                author={profile}
-                responseCount={p._count.responses}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          <section>
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">
+                  Your questions
+                </h2>
+                <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
+                  Tap any to read what people wrote and pin what resonates.
+                </p>
+              </div>
+              <Link
+                href="/create"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-4 py-2 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
+              >
+                <Plus size={14} /> Ask
+              </Link>
+            </div>
+            <div className="mt-5 space-y-4">
+              {profile.prompts.map((p) => (
+                <PromptCard
+                  key={p.id}
+                  prompt={p}
+                  author={profile}
+                  responseCount={p._count.responses}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

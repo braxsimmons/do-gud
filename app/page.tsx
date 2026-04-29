@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircleQuestion, Send, Pin } from "lucide-react";
 import { getFeedPrompts } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
 import { PromptCard } from "@/components/prompt-card";
-import { EmptyState } from "@/components/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +32,11 @@ export default async function HomePage() {
         <div className="mt-7 flex flex-wrap items-center gap-3">
           {me ? (
             <Link
-              href="/create"
+              href={prompts.length === 0 ? "/welcome" : "/create"}
               className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] transition hover:bg-[color:var(--color-sage-700)]"
             >
-              Ask a question <ArrowRight size={15} />
+              {prompts.length === 0 ? "Start the first one" : "Ask a question"}{" "}
+              <ArrowRight size={15} />
             </Link>
           ) : (
             <Link
@@ -57,41 +57,20 @@ export default async function HomePage() {
 
       <div className="dotted-divider" />
 
-      <section>
-        <div className="mb-5 flex items-end justify-between">
-          <div>
-            <h2 className="font-serif text-2xl text-[color:var(--color-ink-900)]">
-              Today&apos;s reflections
-            </h2>
-            <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
-              Recent questions from the community. Tap one to write a response.
-            </p>
+      {prompts.length === 0 ? (
+        <FirstUserSection signedIn={!!me} />
+      ) : (
+        <section>
+          <div className="mb-5 flex items-end justify-between">
+            <div>
+              <h2 className="font-serif text-2xl text-[color:var(--color-ink-900)]">
+                Today&apos;s reflections
+              </h2>
+              <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
+                Recent questions. Tap one to write a response.
+              </p>
+            </div>
           </div>
-        </div>
-
-        {prompts.length === 0 ? (
-          <EmptyState
-            title="No reflections yet."
-            body="Be the first to ask the people in your life how they actually see you."
-            action={
-              me ? (
-                <Link
-                  href="/create"
-                  className="inline-flex rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
-                >
-                  Ask the first question
-                </Link>
-              ) : (
-                <Link
-                  href="/onboarding"
-                  className="inline-flex rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
-                >
-                  Make a profile to ask
-                </Link>
-              )
-            }
-          />
-        ) : (
           <div className="space-y-4">
             {prompts.map((p) => (
               <PromptCard
@@ -102,8 +81,90 @@ export default async function HomePage() {
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function FirstUserSection({ signedIn }: { signedIn: boolean }) {
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-serif text-2xl text-[color:var(--color-ink-900)]">
+          Nobody&apos;s asked yet.
+        </h2>
+        <p className="mt-2 max-w-lg text-sm text-[color:var(--color-ink-500)]">
+          You&apos;re early. The first question on Do Güd should be yours —
+          something you actually want to know about yourself.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <HowStep
+          n="1"
+          icon={<MessageCircleQuestion size={18} />}
+          title="Ask"
+          body="One specific question. The narrower the better."
+        />
+        <HowStep
+          n="2"
+          icon={<Send size={18} />}
+          title="Share"
+          body="One link. Send it to the people who know you."
+        />
+        <HowStep
+          n="3"
+          icon={<Pin size={18} />}
+          title="Pin"
+          body="Keep the reflections that hit something true."
+        />
+      </div>
+
+      <div className="flex items-center justify-between rounded-3xl bg-[color:var(--color-ink-900)] p-6 text-[color:var(--color-cream-100)] sm:p-7">
+        <div>
+          <p className="font-serif text-lg leading-snug">
+            Ready when you are.
+          </p>
+          <p className="mt-1 text-sm text-[color:var(--color-cream-200)]/70">
+            Takes about 30 seconds.
+          </p>
+        </div>
+        <Link
+          href={signedIn ? "/create" : "/onboarding"}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-cream-50)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-ink-900)] transition hover:bg-[color:var(--color-sage-300)]"
+        >
+          {signedIn ? "Ask the first question" : "Make a profile"}{" "}
+          <ArrowRight size={15} />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function HowStep({
+  n,
+  icon,
+  title,
+  body,
+}: {
+  n: string;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--color-ink-200)]/70 bg-[color:var(--color-cream-100)]/50 p-4">
+      <div className="flex items-center gap-2 text-[color:var(--color-sage-700)]">
+        {icon}
+        <span className="font-serif text-sm italic">step {n}</span>
+      </div>
+      <p className="mt-3 text-sm font-medium text-[color:var(--color-ink-900)]">
+        {title}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-[color:var(--color-ink-500)]">
+        {body}
+      </p>
     </div>
   );
 }

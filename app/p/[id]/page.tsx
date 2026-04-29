@@ -6,23 +6,28 @@ import { Avatar } from "@/components/avatar";
 import { CategoryChip } from "@/components/category-chip";
 import { ResponseCard } from "@/components/response-card";
 import { ResponseForm } from "./response-form";
+import { ShareCard } from "@/components/share-card";
 import type { PromptCategory } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function PromptDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
-  const { id } = await params;
-  const [prompt, me] = await Promise.all([
-    getPromptById(id),
+  const [{ id }, sp, me] = await Promise.all([
+    params,
+    searchParams,
     getCurrentUser(),
   ]);
+  const prompt = await getPromptById(id);
   if (!prompt) notFound();
 
   const isAuthor = me?.id === prompt.authorId;
+  const showShare = isAuthor && (sp.new === "1" || prompt.responses.length === 0);
 
   return (
     <div className="space-y-8 pt-2">
@@ -63,18 +68,26 @@ export default async function PromptDetailPage({
         </p>
       </section>
 
+      {showShare ? (
+        <ShareCard
+          promptId={prompt.id}
+          question={prompt.question}
+          authorFirstName={prompt.author.name.split(" ")[0]}
+        />
+      ) : null}
+
       {!isAuthor ? (
         <ResponseForm
           promptId={prompt.id}
           authorName={prompt.author.name.split(" ")[0]}
           isSignedIn={!!me}
         />
-      ) : (
+      ) : !showShare ? (
         <div className="rounded-2xl border border-dashed border-[color:var(--color-ink-200)] bg-[color:var(--color-cream-100)]/30 p-5 text-sm text-[color:var(--color-ink-500)]">
           This is your question. Reflections from others will appear below —
           you can pin the ones that hit something true.
         </div>
-      )}
+      ) : null}
 
       <section>
         <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">

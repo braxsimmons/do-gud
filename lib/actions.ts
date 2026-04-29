@@ -73,7 +73,7 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
   });
 
   await createSession(user.id);
-  return { ok: true, redirectTo: "/me" };
+  return { ok: true, redirectTo: "/welcome" };
 }
 
 export async function signIn(formData: FormData): Promise<ActionResult> {
@@ -131,7 +131,7 @@ export async function createPrompt(formData: FormData): Promise<ActionResult> {
   revalidatePath("/");
   revalidatePath(`/u/${me.username}`);
   revalidatePath("/me");
-  return { ok: true, redirectTo: `/p/${prompt.id}` };
+  return { ok: true, redirectTo: `/p/${prompt.id}?new=1` };
 }
 
 export async function createResponse(formData: FormData): Promise<ActionResult> {

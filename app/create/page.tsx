@@ -39,7 +39,7 @@ export default async function CreatePromptPage() {
     <div className="space-y-8 pt-2">
       <section>
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--color-ink-400)]">
-          Ask a question
+          Step 2 of 3 · Ask a question
         </p>
         <h1 className="mt-3 font-serif text-3xl leading-tight text-[color:var(--color-ink-900)] sm:text-4xl">
           What do you want to know{" "}
@@ -48,8 +48,8 @@ export default async function CreatePromptPage() {
           </span>
         </h1>
         <p className="mt-3 max-w-xl text-sm text-[color:var(--color-ink-500)]">
-          Pick a category. The more specific the question, the more useful the
-          reflections you get back.
+          Pick a category, then write the thing you actually want to know. The
+          more specific the question, the more useful the reflections.
         </p>
       </section>
 
