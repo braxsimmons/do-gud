@@ -16,24 +16,28 @@ model User {
   bio          String     @default("")
   avatar       String
   passwordHash String
+  role         String     @default("user") // "user" | "admin"
   joinedAt     DateTime   @default(now())
 
-  prompts      Prompt[]
-  responses    Response[]
+  prompts       Prompt[]
+  responses     Response[]
+  drops         ReflectionDrop[] @relation("DropCreator")
+  dropsSent     DropReflection[] @relation("DropSender")
+  dropsReceived DropReflection[] @relation("DropRecipient")
 
   @@index([username])
 }
 
 model Prompt {
-  id              String     @id @default(cuid())
-  authorId        String
-  author          User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  question        String
-  category        String
-  image           String?
-  createdAt       DateTime   @default(now())
+  id        String     @id @default(cuid())
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  question  String
+  category  String
+  image     String?
+  createdAt DateTime   @default(now())
 
-  responses       Response[]
+  responses Response[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -54,4 +58,38 @@ model Response {
   @@index([promptId])
   @@index([responderId])
   @@index([createdAt])
+}
+
+model ReflectionDrop {
+  id          String   @id @default(cuid())
+  prompt      String
+  opensAt     DateTime
+  closesAt    DateTime
+  createdById String?
+  createdBy   User?    @relation("DropCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  reflections DropReflection[]
+
+  @@index([opensAt])
+  @@index([closesAt])
+}
+
+model DropReflection {
+  id          String         @id @default(cuid())
+  dropId      String
+  drop        ReflectionDrop @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User           @relation("DropSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User           @relation("DropRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  text        String
+  traits      String[]
+  pinned      Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+
+  @@unique([dropId, senderId, recipientId])
+  @@index([dropId])
+  @@index([senderId])
+  @@index([recipientId])
 }

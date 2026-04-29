@@ -10,6 +10,7 @@ import {
   getCurrentUser,
   requireUser,
 } from "./auth";
+import { isAdminUser } from "./admin";
 import { TRAITS, type Trait, type PromptCategory } from "./types";
 
 const VALID_CATEGORIES: PromptCategory[] = [
@@ -194,5 +195,179 @@ export async function togglePin(responseId: string): Promise<ActionResult> {
   revalidatePath(`/p/${response.promptId}`);
   revalidatePath(`/u/${me.username}`);
   revalidatePath("/me");
+  return { ok: true };
+}
+
+export async function toggleDropPin(reflectionId: string): Promise<ActionResult> {
+  const me = await requireUser();
+  const r = await db.dropReflection.findUnique({ where: { id: reflectionId } });
+  if (!r) return { ok: false, error: "Not found." };
+  if (r.recipientId !== me.id) {
+    return { ok: false, error: "Only the recipient can pin." };
+  }
+  await db.dropReflection.update({
+    where: { id: reflectionId },
+    data: { pinned: !r.pinned },
+  });
+  revalidatePath("/me");
+  return { ok: true };
+}
+
+/* ───────── Drops ───────── */
+
+export async function sendDropReflection(formData: FormData): Promise<ActionResult> {
+  const me = await requireUser();
+
+  const dropId = (formData.get("dropId") as string | null) ?? "";
+  const recipientId = (formData.get("recipientId") as string | null) ?? "";
+  const text = ((formData.get("text") as string | null) ?? "").trim();
+  const traitsRaw = formData.getAll("traits").map(String);
+
+  if (!dropId || !recipientId) return { ok: false, error: "Missing fields." };
+  if (recipientId === me.id) {
+    return { ok: false, error: "You can't send a drop to yourself." };
+  }
+  if (text.length < 25) {
+    return { ok: false, error: "Reflection must be at least 25 characters." };
+  }
+  if (text.length > 500) {
+    return { ok: false, error: "Reflection must be under 500 characters." };
+  }
+
+  const drop = await db.reflectionDrop.findUnique({ where: { id: dropId } });
+  if (!drop) return { ok: false, error: "Drop not found." };
+  const now = new Date();
+  if (drop.opensAt > now) return { ok: false, error: "Drop hasn't opened yet." };
+  if (drop.closesAt <= now) return { ok: false, error: "Drop has closed." };
+
+  const recipient = await db.user.findUnique({ where: { id: recipientId } });
+  if (!recipient) return { ok: false, error: "Recipient not found." };
+
+  const validTraits = traitsRaw.filter((t): t is Trait =>
+    (TRAITS as string[]).includes(t),
+  );
+  if (validTraits.length > 3) validTraits.length = 3;
+
+  try {
+    await db.dropReflection.create({
+      data: {
+        dropId,
+        senderId: me.id,
+        recipientId,
+        text,
+        traits: validTraits,
+      },
+    });
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      "code" in err &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      return {
+        ok: false,
+        error: "You already sent a reflection to this person in this drop.",
+      };
+    }
+    throw err;
+  }
+
+  revalidatePath("/drop");
+  revalidatePath("/me");
+  return { ok: true };
+}
+
+/* ───────── Admin ───────── */
+
+async function requireAdminUser() {
+  const me = await getCurrentUser();
+  if (!isAdminUser(me)) throw new Error("Forbidden");
+  return me!;
+}
+
+export async function adminCreateDrop(formData: FormData): Promise<ActionResult> {
+  const me = await requireAdminUser();
+
+  const prompt = ((formData.get("prompt") as string | null) ?? "").trim();
+  const opensAtRaw = (formData.get("opensAt") as string | null) ?? "";
+  const durationMin = Number(formData.get("durationMin")) || 60;
+
+  if (prompt.length < 8) return { ok: false, error: "Prompt is too short." };
+  if (!opensAtRaw) return { ok: false, error: "Pick an open time." };
+
+  const opensAt = new Date(opensAtRaw);
+  if (Number.isNaN(opensAt.getTime())) {
+    return { ok: false, error: "Invalid open time." };
+  }
+  const closesAt = new Date(opensAt.getTime() + durationMin * 60 * 1000);
+
+  const drop = await db.reflectionDrop.create({
+    data: { prompt, opensAt, closesAt, createdById: me.id },
+  });
+
+  revalidatePath("/admin/drops");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { ok: true, redirectTo: `/admin/drops/${drop.id}` };
+}
+
+export async function adminEndDrop(dropId: string): Promise<ActionResult> {
+  await requireAdminUser();
+  const drop = await db.reflectionDrop.findUnique({ where: { id: dropId } });
+  if (!drop) return { ok: false, error: "Not found." };
+  await db.reflectionDrop.update({
+    where: { id: dropId },
+    data: { closesAt: new Date() },
+  });
+  revalidatePath("/admin/drops");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function adminDeleteDrop(dropId: string): Promise<ActionResult> {
+  await requireAdminUser();
+  await db.reflectionDrop.delete({ where: { id: dropId } });
+  revalidatePath("/admin/drops");
+  revalidatePath("/admin");
+  return { ok: true, redirectTo: "/admin/drops" };
+}
+
+export async function adminDeletePrompt(promptId: string): Promise<ActionResult> {
+  await requireAdminUser();
+  await db.prompt.delete({ where: { id: promptId } });
+  revalidatePath("/admin");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function adminDeleteResponse(responseId: string): Promise<ActionResult> {
+  await requireAdminUser();
+  await db.response.delete({ where: { id: responseId } });
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function adminDeleteUser(userId: string): Promise<ActionResult> {
+  const me = await requireAdminUser();
+  if (userId === me.id) return { ok: false, error: "Can't delete yourself." };
+  await db.user.delete({ where: { id: userId } });
+  revalidatePath("/admin");
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+export async function adminPromoteUser(userId: string): Promise<ActionResult> {
+  await requireAdminUser();
+  await db.user.update({ where: { id: userId }, data: { role: "admin" } });
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+export async function adminDemoteUser(userId: string): Promise<ActionResult> {
+  const me = await requireAdminUser();
+  if (userId === me.id) return { ok: false, error: "Can't demote yourself." };
+  await db.user.update({ where: { id: userId }, data: { role: "user" } });
+  revalidatePath("/admin/users");
   return { ok: true };
 }

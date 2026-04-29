@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/header";
+import { DropBanner } from "@/components/drop-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +39,10 @@ export default function RootLayout({
       <body className="font-sans">
         <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-5 sm:px-8">
           <Header />
-          <main className="flex-1 pb-32 pt-6 sm:pt-10">{children}</main>
+          <div className="pt-3 sm:pt-4">
+            <DropBanner />
+          </div>
+          <main className="flex-1 pb-32 pt-6 sm:pt-8">{children}</main>
           <footer className="pb-10 pt-16 text-center text-xs text-[color:var(--color-ink-400)]">
             <span className="font-serif italic">Do Güd</span> · be specific, be
             honest, be kind

@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getPinnedReflectionsForUser,
+  getReceivedDropReflections,
   getUserByUsername,
 } from "@/lib/queries";
 import { signOut } from "@/lib/actions";
+import { DropReflectionCard } from "./drop-reflection-card";
 import { Avatar } from "@/components/avatar";
 import { PromptCard } from "@/components/prompt-card";
 import { ResponseCard } from "@/components/response-card";
@@ -18,9 +20,10 @@ export default async function MePage() {
   const me = await getCurrentUser();
   if (!me) redirect("/onboarding");
 
-  const [profile, pinned] = await Promise.all([
+  const [profile, pinned, dropsReceived] = await Promise.all([
     getUserByUsername(me.username),
     getPinnedReflectionsForUser(me.id),
+    getReceivedDropReflections(me.id),
   ]);
   if (!profile) redirect("/onboarding");
 
@@ -53,6 +56,23 @@ export default async function MePage() {
           </button>
         </form>
       </section>
+
+      {dropsReceived.length > 0 ? (
+        <section>
+          <h2 className="font-serif text-xl text-[color:var(--color-ink-900)]">
+            Drops sent to you
+          </h2>
+          <p className="mt-1 text-sm text-[color:var(--color-ink-500)]">
+            Reflections people sent during a Reflection Drop. Pin the ones that
+            land.
+          </p>
+          <div className="mt-5 space-y-3">
+            {dropsReceived.map((r) => (
+              <DropReflectionCard key={r.id} reflection={r} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {profile.prompts.length === 0 ? (
         <section className="space-y-5 rounded-3xl bg-[color:var(--color-ink-900)] p-6 text-[color:var(--color-cream-100)] sm:p-8">
