@@ -1,19 +1,18 @@
-"use client";
-
 import Link from "next/link";
-import type { Prompt, User } from "@/lib/types";
+import type { PromptUI, UserUI } from "@/lib/types";
 import { CategoryChip } from "./category-chip";
 import { Avatar } from "./avatar";
-import { timeAgo } from "@/lib/queries";
+import { timeAgo } from "@/lib/time-ago";
 import { MessageCircle } from "lucide-react";
+import type { PromptCategory } from "@/lib/types";
 
 export function PromptCard({
   prompt,
   author,
   responseCount,
 }: {
-  prompt: Prompt;
-  author: User;
+  prompt: PromptUI;
+  author: UserUI;
   responseCount: number;
 }) {
   return (
@@ -37,7 +36,7 @@ export function PromptCard({
             </div>
           </div>
         </Link>
-        <CategoryChip category={prompt.category} />
+        <CategoryChip category={prompt.category as PromptCategory} />
       </div>
 
       {prompt.image ? (

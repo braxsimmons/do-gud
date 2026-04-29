@@ -1,24 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import type { Response, User } from "@/lib/types";
+import { useTransition } from "react";
+import type { ResponseUI, UserUI } from "@/lib/types";
 import { Avatar } from "./avatar";
 import { TraitChip } from "./trait-chip";
-import { timeAgo } from "@/lib/queries";
+import { timeAgo } from "@/lib/time-ago";
 import { Pin, PinOff } from "lucide-react";
 import clsx from "clsx";
+import { togglePin } from "@/lib/actions";
 
 export function ResponseCard({
   response,
   responder,
   canPin,
-  onTogglePin,
 }: {
-  response: Response;
-  responder: User | null;
+  response: ResponseUI;
+  responder: UserUI | null;
   canPin?: boolean;
-  onTogglePin?: () => void;
 }) {
+  const [pending, startTransition] = useTransition();
   const anonymous = response.anonymous || !responder;
 
   return (
@@ -44,7 +45,7 @@ export function ResponseCard({
               {anonymous ? "Anonymous" : responder.name}
             </div>
             <div className="text-xs text-[color:var(--color-ink-400)]">
-              {anonymous ? (
+              {anonymous || !responder ? (
                 "private reflection"
               ) : (
                 <Link
@@ -62,12 +63,20 @@ export function ResponseCard({
         {canPin ? (
           <button
             type="button"
-            onClick={onTogglePin}
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                await togglePin(response.id);
+              })
+            }
             aria-label={response.pinned ? "Unpin reflection" : "Pin reflection"}
             className={clsx(
-              "rounded-full p-1.5 text-[color:var(--color-ink-400)] transition",
+              "rounded-full p-1.5 transition",
               "hover:bg-[color:var(--color-cream-200)] hover:text-[color:var(--color-sage-700)]",
-              response.pinned && "text-[color:var(--color-sage-700)]",
+              response.pinned
+                ? "text-[color:var(--color-sage-700)]"
+                : "text-[color:var(--color-ink-400)]",
+              pending && "opacity-50",
             )}
           >
             {response.pinned ? <Pin size={16} /> : <PinOff size={16} />}

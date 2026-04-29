@@ -1,4 +1,3 @@
-import type { Trait } from "@/lib/types";
 import clsx from "clsx";
 
 export function TraitChip({
@@ -7,7 +6,7 @@ export function TraitChip({
   onClick,
   size = "md",
 }: {
-  trait: Trait;
+  trait: string;
   selected?: boolean;
   onClick?: () => void;
   size?: "sm" | "md";

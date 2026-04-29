@@ -1,39 +1,26 @@
-"use client";
-
-import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useSnapshot } from "@/lib/store";
 import {
-  pinnedResponsesForUser,
-  promptsByUser,
-  responsesForPrompt,
-  userByUsername,
+  getPinnedReflectionsForUser,
+  getUserByUsername,
 } from "@/lib/queries";
 import { PromptCard } from "@/components/prompt-card";
 import { ResponseCard } from "@/components/response-card";
 import { Avatar } from "@/components/avatar";
 import { EmptyState } from "@/components/empty-state";
 
-export default function UserProfilePage({
+export const dynamic = "force-dynamic";
+
+export default async function UserProfilePage({
   params,
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const { username } = use(params);
-  const snap = useSnapshot();
+  const { username } = await params;
+  const user = await getUserByUsername(username);
+  if (!user) notFound();
 
-  const user = userByUsername(snap, username);
-  if (!user && snap.users.length > 0) {
-    // If our snapshot is hydrated and user isn't here, 404.
-    notFound();
-  }
-  if (!user) {
-    return <div className="h-40" />;
-  }
-
-  const prompts = promptsByUser(snap, username);
-  const pinned = pinnedResponsesForUser(snap, username);
+  const pinned = await getPinnedReflectionsForUser(user.id);
 
   return (
     <div className="space-y-10 pt-2">
@@ -63,18 +50,13 @@ export default function UserProfilePage({
             Pinned reflections from others.
           </p>
           <div className="mt-5 space-y-3">
-            {pinned.map((r) => {
-              const responder = snap.users.find(
-                (u) => u.username === r.responderUsername,
-              );
-              return (
-                <ResponseCard
-                  key={r.id}
-                  response={r}
-                  responder={responder ?? null}
-                />
-              );
-            })}
+            {pinned.map((r) => (
+              <ResponseCard
+                key={r.id}
+                response={r}
+                responder={r.responder}
+              />
+            ))}
           </div>
         </section>
       ) : null}
@@ -85,10 +67,10 @@ export default function UserProfilePage({
             Questions {user.name.split(" ")[0]} has asked
           </h2>
         </div>
-        {prompts.length === 0 ? (
+        {user.prompts.length === 0 ? (
           <EmptyState
             title="No questions yet."
-            body={`${user.name.split(" ")[0]} hasn't posted a prompt. Once they do, the people in their life can write back here.`}
+            body={`${user.name.split(" ")[0]} hasn't posted a prompt yet.`}
             action={
               <Link
                 href="/"
@@ -100,12 +82,12 @@ export default function UserProfilePage({
           />
         ) : (
           <div className="space-y-4">
-            {prompts.map((p) => (
+            {user.prompts.map((p) => (
               <PromptCard
                 key={p.id}
                 prompt={p}
                 author={user}
-                responseCount={responsesForPrompt(snap, p.id).length}
+                responseCount={p._count.responses}
               />
             ))}
           </div>

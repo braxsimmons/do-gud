@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  name         String
+  bio          String     @default("")
+  avatar       String
+  passwordHash String
+  joinedAt     DateTime   @default(now())
+
+  prompts      Prompt[]
+  responses    Response[]
+
+  @@index([username])
+}
+
+model Prompt {
+  id              String     @id @default(cuid())
+  authorId        String
+  author          User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  question        String
+  category        String
+  image           String?
+  createdAt       DateTime   @default(now())
+
+  responses       Response[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Response {
+  id          String   @id @default(cuid())
+  promptId    String
+  prompt      Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  responderId String
+  responder   User     @relation(fields: [responderId], references: [id], onDelete: Cascade)
+  text        String
+  traits      String[]
+  anonymous   Boolean  @default(false)
+  pinned      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([promptId])
+  @@index([responderId])
+  @@index([createdAt])
+}

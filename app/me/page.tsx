@@ -1,50 +1,28 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import {
-  signOut,
-  togglePinResponse,
-  useCurrentUser,
-  useSnapshot,
-} from "@/lib/store";
-import {
-  pinnedResponsesForUser,
-  promptsByUser,
-  responsesForPrompt,
+  getPinnedReflectionsForUser,
+  getUserByUsername,
 } from "@/lib/queries";
+import { signOut } from "@/lib/actions";
 import { Avatar } from "@/components/avatar";
 import { PromptCard } from "@/components/prompt-card";
 import { ResponseCard } from "@/components/response-card";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, LogOut } from "lucide-react";
 
-export default function MePage() {
-  const router = useRouter();
-  const me = useCurrentUser();
-  const snap = useSnapshot();
+export const dynamic = "force-dynamic";
 
-  if (!me) {
-    return (
-      <div className="space-y-6 pt-6">
-        <h1 className="font-serif text-3xl text-[color:var(--color-ink-900)]">
-          Make a profile.
-        </h1>
-        <p className="text-sm text-[color:var(--color-ink-500)]">
-          Once you do, your reflection hub lives here.
-        </p>
-        <Link
-          href="/onboarding"
-          className="inline-flex rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
-        >
-          Make profile
-        </Link>
-      </div>
-    );
-  }
+export default async function MePage() {
+  const me = await getCurrentUser();
+  if (!me) redirect("/onboarding");
 
-  const myPrompts = promptsByUser(snap, me.username);
-  const pinned = pinnedResponsesForUser(snap, me.username);
+  const [profile, pinned] = await Promise.all([
+    getUserByUsername(me.username),
+    getPinnedReflectionsForUser(me.id),
+  ]);
+  if (!profile) redirect("/onboarding");
 
   return (
     <div className="space-y-10 pt-2">
@@ -64,18 +42,16 @@ export default function MePage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            signOut();
-            router.push("/");
-          }}
-          aria-label="Sign out"
-          className="rounded-full border border-[color:var(--color-ink-200)] p-2 text-[color:var(--color-ink-500)] hover:border-[color:var(--color-rose-300)] hover:text-[color:var(--color-rose-500)]"
-          title="Sign out"
-        >
-          <LogOut size={15} />
-        </button>
+        <form action={signOut}>
+          <button
+            type="submit"
+            aria-label="Sign out"
+            title="Sign out"
+            className="rounded-full border border-[color:var(--color-ink-200)] p-2 text-[color:var(--color-ink-500)] hover:border-[color:var(--color-rose-300)] hover:text-[color:var(--color-rose-500)]"
+          >
+            <LogOut size={15} />
+          </button>
+        </form>
       </section>
 
       <section>
@@ -99,20 +75,14 @@ export default function MePage() {
           </div>
         ) : (
           <div className="mt-5 space-y-3">
-            {pinned.map((r) => {
-              const responder = snap.users.find(
-                (u) => u.username === r.responderUsername,
-              );
-              return (
-                <ResponseCard
-                  key={r.id}
-                  response={r}
-                  responder={responder ?? null}
-                  canPin
-                  onTogglePin={() => togglePinResponse(r.id)}
-                />
-              );
-            })}
+            {pinned.map((r) => (
+              <ResponseCard
+                key={r.id}
+                response={r}
+                responder={r.responder}
+                canPin
+              />
+            ))}
           </div>
         )}
       </section>
@@ -135,7 +105,7 @@ export default function MePage() {
           </Link>
         </div>
 
-        {myPrompts.length === 0 ? (
+        {profile.prompts.length === 0 ? (
           <div className="mt-5">
             <EmptyState
               title="No questions yet."
@@ -152,12 +122,12 @@ export default function MePage() {
           </div>
         ) : (
           <div className="mt-5 space-y-4">
-            {myPrompts.map((p) => (
+            {profile.prompts.map((p) => (
               <PromptCard
                 key={p.id}
                 prompt={p}
-                author={me}
-                responseCount={responsesForPrompt(snap, p.id).length}
+                author={profile}
+                responseCount={p._count.responses}
               />
             ))}
           </div>

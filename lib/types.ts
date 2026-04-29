@@ -65,37 +65,34 @@ export const TRAITS: Trait[] = [
   "loyal",
 ];
 
-export type User = {
-  id: string;
+/** Lightweight UI-only shapes — what the components actually need. */
+export type UserUI = {
+  id?: string;
   username: string;
   name: string;
-  bio: string;
+  bio?: string;
   avatar: string;
-  joinedAt: string;
 };
 
-export type Prompt = {
+export type PromptUI = {
   id: string;
-  authorUsername: string;
   question: string;
-  category: PromptCategory;
-  image?: string;
-  createdAt: string;
+  category: string;
+  image?: string | null;
+  createdAt: Date | string;
 };
 
-export type Response = {
+export type ResponseUI = {
   id: string;
-  promptId: string;
-  responderUsername: string;
   text: string;
-  traits: Trait[];
+  traits: string[];
   anonymous: boolean;
-  createdAt: string;
-  pinned?: boolean;
+  pinned: boolean;
+  createdAt: Date | string;
 };
 
-export type Snapshot = {
-  users: User[];
-  prompts: Prompt[];
-  responses: Response[];
-};
+export function avatarUrl(seed: string) {
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(
+    seed,
+  )}&backgroundColor=eef2e9,f4eede,f5e6e0,e9eaf3,e3edf2`;
+}

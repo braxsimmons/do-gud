@@ -1,15 +1,14 @@
-"use client";
-
 import Link from "next/link";
-import { useSnapshot, useCurrentUser } from "@/lib/store";
-import { feedPrompts, responsesForPrompt } from "@/lib/queries";
-import { PromptCard } from "@/components/prompt-card";
 import { ArrowRight } from "lucide-react";
+import { getFeedPrompts } from "@/lib/queries";
+import { getCurrentUser } from "@/lib/auth";
+import { PromptCard } from "@/components/prompt-card";
+import { EmptyState } from "@/components/empty-state";
 
-export default function HomePage() {
-  const snap = useSnapshot();
-  const me = useCurrentUser();
-  const prompts = feedPrompts(snap);
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [prompts, me] = await Promise.all([getFeedPrompts(), getCurrentUser()]);
 
   return (
     <div className="space-y-12">
@@ -70,23 +69,40 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {prompts.map((p) => {
-            const author = snap.users.find(
-              (u) => u.username === p.authorUsername,
-            );
-            if (!author) return null;
-            const count = responsesForPrompt(snap, p.id).length;
-            return (
+        {prompts.length === 0 ? (
+          <EmptyState
+            title="No reflections yet."
+            body="Be the first to ask the people in your life how they actually see you."
+            action={
+              me ? (
+                <Link
+                  href="/create"
+                  className="inline-flex rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
+                >
+                  Ask the first question
+                </Link>
+              ) : (
+                <Link
+                  href="/onboarding"
+                  className="inline-flex rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
+                >
+                  Make a profile to ask
+                </Link>
+              )
+            }
+          />
+        ) : (
+          <div className="space-y-4">
+            {prompts.map((p) => (
               <PromptCard
                 key={p.id}
                 prompt={p}
-                author={author}
-                responseCount={count}
+                author={p.author}
+                responseCount={p._count.responses}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
