@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ export default async function AdminLayout({
 }) {
   const me = await getCurrentUser();
   if (!isAdminUser(me)) redirect("/");
+
+  const openReports = await db.report.count({ where: { status: "pending" } });
 
   return (
     <div className="space-y-6 pt-2">
@@ -32,6 +35,14 @@ export default async function AdminLayout({
       <nav className="-mx-1 flex flex-wrap gap-1 overflow-x-auto rounded-2xl border border-[color:var(--color-ink-200)]/70 bg-[color:var(--color-cream-100)]/40 p-1 text-sm">
         <AdminLink href="/admin">Overview</AdminLink>
         <AdminLink href="/admin/drops">Drops</AdminLink>
+        <AdminLink href="/admin/reports">
+          Reports
+          {openReports > 0 ? (
+            <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--color-rose-500)] px-1.5 text-[10px] font-semibold text-[color:var(--color-cream-50)]">
+              {openReports}
+            </span>
+          ) : null}
+        </AdminLink>
         <AdminLink href="/admin/users">Users</AdminLink>
         <AdminLink href="/admin/content">Content</AdminLink>
       </nav>

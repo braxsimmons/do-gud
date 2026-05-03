@@ -7,7 +7,8 @@ import { PromptCard } from "@/components/prompt-card";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [prompts, me] = await Promise.all([getFeedPrompts(), getCurrentUser()]);
+  const me = await getCurrentUser();
+  const prompts = await getFeedPrompts(me?.id);
 
   return (
     <div className="space-y-12">

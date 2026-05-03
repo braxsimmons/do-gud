@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import type { ResponseUI, UserUI } from "@/lib/types";
 import { Avatar } from "./avatar";
 import { TraitChip } from "./trait-chip";
+import { ReportButton } from "./report-button";
 import { timeAgo } from "@/lib/time-ago";
 import { Pin, PinOff } from "lucide-react";
 import clsx from "clsx";
@@ -13,14 +14,19 @@ import { togglePin } from "@/lib/actions";
 export function ResponseCard({
   response,
   responder,
+  guestName,
   canPin,
+  canReport = true,
 }: {
   response: ResponseUI;
   responder: UserUI | null;
+  guestName?: string | null;
   canPin?: boolean;
+  canReport?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const anonymous = response.anonymous || !responder;
+  const isGuest = !responder && Boolean(guestName);
+  const anonymous = response.anonymous || (!responder && !guestName);
 
   return (
     <article
@@ -33,26 +39,32 @@ export function ResponseCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          {anonymous ? (
+          {anonymous || isGuest ? (
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-cream-200)] text-sm font-medium text-[color:var(--color-ink-500)] ring-1 ring-[color:var(--color-ink-200)]/60">
-              ?
+              {isGuest ? guestName!.charAt(0).toUpperCase() : "?"}
             </div>
           ) : (
-            <Avatar src={responder.avatar} name={responder.name} size={36} />
+            <Avatar src={responder!.avatar} name={responder!.name} size={36} />
           )}
           <div className="leading-tight">
             <div className="text-sm font-medium text-[color:var(--color-ink-900)]">
-              {anonymous ? "Anonymous" : responder.name}
+              {anonymous
+                ? "Anonymous"
+                : isGuest
+                  ? guestName
+                  : responder!.name}
             </div>
             <div className="text-xs text-[color:var(--color-ink-400)]">
-              {anonymous || !responder ? (
+              {anonymous ? (
                 "private reflection"
+              ) : isGuest ? (
+                "guest"
               ) : (
                 <Link
-                  href={`/u/${responder.username}`}
+                  href={`/u/${responder!.username}`}
                   className="hover:text-[color:var(--color-sage-700)]"
                 >
-                  @{responder.username}
+                  @{responder!.username}
                 </Link>
               )}{" "}
               · {timeAgo(response.createdAt)}
@@ -97,6 +109,12 @@ export function ResponseCard({
           {response.traits.map((t) => (
             <TraitChip key={t} trait={t} size="sm" />
           ))}
+        </div>
+      ) : null}
+
+      {canReport ? (
+        <div className="mt-3 flex justify-end">
+          <ReportButton targetType="response" targetId={response.id} />
         </div>
       ) : null}
     </article>

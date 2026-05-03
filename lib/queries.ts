@@ -1,28 +1,48 @@
 import "server-only";
 import { db } from "./db";
 
-export async function getFeedPrompts(limit = 50) {
+export async function getFeedPrompts(viewerId?: string, limit = 50) {
+  const blockedIds = viewerId
+    ? (
+        await db.block.findMany({
+          where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+          select: { blockerId: true, blockedId: true },
+        })
+      )
+        .flatMap((b) => [b.blockerId, b.blockedId])
+        .filter((id) => id !== viewerId)
+    : [];
+
   return db.prompt.findMany({
+    where: {
+      removed: false,
+      ...(blockedIds.length > 0 ? { authorId: { notIn: blockedIds } } : {}),
+    },
     take: limit,
     orderBy: { createdAt: "desc" },
     include: {
       author: true,
-      _count: { select: { responses: true } },
+      _count: {
+        select: { responses: { where: { removed: false } } },
+      },
     },
   });
 }
 
 export async function getPromptById(id: string) {
-  return db.prompt.findUnique({
+  const prompt = await db.prompt.findUnique({
     where: { id },
     include: {
       author: true,
       responses: {
+        where: { removed: false },
         orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
         include: { responder: true },
       },
     },
   });
+  if (!prompt || prompt.removed) return null;
+  return prompt;
 }
 
 export async function getUserByUsername(username: string) {
@@ -30,8 +50,13 @@ export async function getUserByUsername(username: string) {
     where: { username },
     include: {
       prompts: {
+        where: { removed: false },
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { responses: true } } },
+        include: {
+          _count: {
+            select: { responses: { where: { removed: false } } },
+          },
+        },
       },
     },
   });
@@ -39,7 +64,11 @@ export async function getUserByUsername(username: string) {
 
 export async function getPinnedReflectionsForUser(userId: string) {
   return db.response.findMany({
-    where: { pinned: true, prompt: { authorId: userId } },
+    where: {
+      pinned: true,
+      removed: false,
+      prompt: { authorId: userId, removed: false },
+    },
     orderBy: { createdAt: "desc" },
     include: { responder: true, prompt: true },
   });
@@ -66,6 +95,7 @@ export async function getDropById(id: string) {
     where: { id },
     include: {
       reflections: {
+        where: { removed: false },
         orderBy: { createdAt: "desc" },
         include: { sender: true, recipient: true },
       },
@@ -77,28 +107,49 @@ export async function getRecentDrops(limit = 20) {
   return db.reflectionDrop.findMany({
     take: limit,
     orderBy: { opensAt: "desc" },
-    include: { _count: { select: { reflections: true } } },
+    include: {
+      _count: { select: { reflections: { where: { removed: false } } } },
+    },
   });
 }
 
 export async function getReceivedDropReflections(userId: string, limit = 20) {
   return db.dropReflection.findMany({
-    where: { recipientId: userId },
+    where: { recipientId: userId, removed: false },
     take: limit,
     orderBy: { createdAt: "desc" },
     include: { sender: true, drop: true },
   });
 }
 
-export async function listUsers(query?: string, limit = 24) {
-  const where = query
-    ? {
+export async function listUsers(query?: string, limit = 24, excludeBlockedFor?: string) {
+  const where: Record<string, unknown> = { banned: false };
+  if (query) {
+    Object.assign(where, {
+      OR: [
+        { username: { contains: query, mode: "insensitive" } },
+        { name: { contains: query, mode: "insensitive" } },
+      ],
+    });
+  }
+  if (excludeBlockedFor) {
+    const blocks = await db.block.findMany({
+      where: {
         OR: [
-          { username: { contains: query, mode: "insensitive" as const } },
-          { name: { contains: query, mode: "insensitive" as const } },
+          { blockerId: excludeBlockedFor },
+          { blockedId: excludeBlockedFor },
         ],
-      }
-    : {};
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+    const ids = blocks
+      .flatMap((b) => [b.blockerId, b.blockedId])
+      .filter((id) => id !== excludeBlockedFor);
+    if (ids.length > 0) {
+      Object.assign(where, { id: { notIn: ids } });
+    }
+  }
+
   return db.user.findMany({
     where,
     take: limit,
@@ -114,15 +165,15 @@ export async function listUsers(query?: string, limit = 24) {
 }
 
 export async function adminMetrics() {
-  const [users, prompts, responses, drops, dropReflections] = await Promise.all(
-    [
+  const [users, prompts, responses, drops, dropReflections, openReports] =
+    await Promise.all([
       db.user.count(),
-      db.prompt.count(),
-      db.response.count(),
+      db.prompt.count({ where: { removed: false } }),
+      db.response.count({ where: { removed: false } }),
       db.reflectionDrop.count(),
-      db.dropReflection.count(),
-    ],
-  );
+      db.dropReflection.count({ where: { removed: false } }),
+      db.report.count({ where: { status: "pending" } }),
+    ]);
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [newUsers24h, newPrompts24h, newResponses24h] = await Promise.all([
     db.user.count({ where: { joinedAt: { gte: since } } }),
@@ -135,6 +186,7 @@ export async function adminMetrics() {
     responses,
     drops,
     dropReflections,
+    openReports,
     newUsers24h,
     newPrompts24h,
     newResponses24h,

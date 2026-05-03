@@ -5,6 +5,7 @@ import { Pin, PinOff, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import { Avatar } from "@/components/avatar";
 import { TraitChip } from "@/components/trait-chip";
+import { ReportButton } from "@/components/report-button";
 import { timeAgo } from "@/lib/time-ago";
 import { toggleDropPin } from "@/lib/actions";
 
@@ -84,9 +85,12 @@ export function DropReflectionCard({ reflection: r }: { reflection: R }) {
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center gap-1.5 text-xs text-[color:var(--color-ink-400)]">
-        <Sparkles size={11} className="text-[color:var(--color-sage-700)]" />
-        From the drop: <em className="italic">“{r.drop.prompt}”</em>
+      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[color:var(--color-ink-400)]">
+        <span className="inline-flex items-center gap-1.5">
+          <Sparkles size={11} className="text-[color:var(--color-sage-700)]" />
+          From the drop: <em className="italic">“{r.drop.prompt}”</em>
+        </span>
+        <ReportButton targetType="drop_reflection" targetId={r.id} />
       </div>
     </article>
   );

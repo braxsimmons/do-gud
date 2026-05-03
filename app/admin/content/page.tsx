@@ -75,7 +75,8 @@ export default async function AdminContentPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-[color:var(--color-ink-400)]">
-                      @{r.responder.username} on{" "}
+                      {r.responder ? `@${r.responder.username}` : `${r.guestName ?? "guest"} (guest)`}{" "}
+                      on{" "}
                       <span className="italic">
                         “{r.prompt.question.slice(0, 60)}…”
                       </span>

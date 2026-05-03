@@ -12,6 +12,8 @@ export function SignUpForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [age13, setAge13] = useState(false);
+  const [tos, setTos] = useState(false);
   const [seedKey, setSeedKey] = useState(() =>
     Math.random().toString(36).slice(2),
   );
@@ -19,6 +21,8 @@ export function SignUpForm() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (!age13) return setError("You must be 13 or older to use Do Güd.");
+    if (!tos) return setError("Please agree to the Terms and Privacy Policy.");
     const fd = new FormData(e.currentTarget);
     fd.set("avatarSeed", seedKey);
 
@@ -103,6 +107,47 @@ export function SignUpForm() {
         />
       </Field>
 
+      <div className="space-y-2 rounded-2xl bg-[color:var(--color-cream-50)] p-3 ring-1 ring-[color:var(--color-ink-200)]">
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[color:var(--color-ink-700)]">
+          <input
+            type="checkbox"
+            name="age13"
+            checked={age13}
+            onChange={(e) => setAge13(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded accent-[color:var(--color-sage-700)]"
+          />
+          <span>I&apos;m 13 or older.</span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[color:var(--color-ink-700)]">
+          <input
+            type="checkbox"
+            name="tos"
+            checked={tos}
+            onChange={(e) => setTos(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded accent-[color:var(--color-sage-700)]"
+          />
+          <span>
+            I agree to the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              className="underline hover:text-[color:var(--color-sage-700)]"
+            >
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              className="underline hover:text-[color:var(--color-sage-700)]"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+      </div>
+
       {error ? (
         <p className="text-sm text-[color:var(--color-rose-500)]">{error}</p>
       ) : null}
@@ -116,7 +161,7 @@ export function SignUpForm() {
         </Link>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !age13 || !tos}
           className="rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] transition hover:bg-[color:var(--color-sage-700)] disabled:opacity-50"
         >
           {pending ? "Creating…" : "Create profile"}

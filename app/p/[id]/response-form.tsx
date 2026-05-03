@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { TraitChip } from "@/components/trait-chip";
 import { TRAITS, type Trait } from "@/lib/types";
-import { Send, Lock } from "lucide-react";
+import { Send, Lock, ArrowRight } from "lucide-react";
 import { createResponse } from "@/lib/actions";
 
 const MIN_LEN = 25;
@@ -24,54 +24,16 @@ export function ResponseForm({
   const [text, setText] = useState("");
   const [traits, setTraits] = useState<Trait[]>([]);
   const [anonymous, setAnonymous] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isSignedIn) {
-    return (
-      <div className="rounded-3xl border border-[color:var(--color-ink-200)]/70 bg-[color:var(--color-cream-100)]/40 p-6 text-center sm:p-8">
-        <p className="font-serif text-lg italic text-[color:var(--color-ink-700)]">
-          Make a profile to write a reflection.
-        </p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-[color:var(--color-ink-500)]">
-          So {authorName} knows who said it (unless you choose to stay
-          anonymous).
-        </p>
-        <div className="mt-5 flex items-center justify-center gap-2">
-          <Link
-            href="/onboarding"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] hover:bg-[color:var(--color-sage-700)]"
-          >
-            Make profile
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full px-4 py-2 text-sm text-[color:var(--color-ink-500)] hover:text-[color:var(--color-ink-900)]"
-          >
-            Sign in
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="rounded-3xl border border-[color:var(--color-sage-300)] bg-[color:var(--color-sage-100)]/60 p-6 text-center sm:p-8">
-        <p className="font-serif text-lg italic text-[color:var(--color-sage-700)]">
-          Your reflection is in.
-        </p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-[color:var(--color-ink-700)]">
-          {authorName} can pin it if it lands.
-        </p>
-      </div>
-    );
-  }
-
   const len = text.trim().length;
   const tooShort = len < MIN_LEN;
+  const guestNameMissing = !isSignedIn && !guestName.trim();
 
-  function handleToggle(t: Trait) {
+  function toggle(t: Trait) {
     setTraits((curr) =>
       curr.includes(t)
         ? curr.filter((x) => x !== t)
@@ -83,13 +45,17 @@ export function ResponseForm({
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (tooShort) return;
+    if (tooShort || guestNameMissing) return;
     setError(null);
     const fd = new FormData();
     fd.set("promptId", promptId);
     fd.set("text", text.trim());
     if (anonymous) fd.set("anonymous", "on");
     for (const t of traits) fd.append("traits", t);
+    if (!isSignedIn) {
+      fd.set("guestName", guestName.trim());
+      if (guestEmail.trim()) fd.set("guestEmail", guestEmail.trim());
+    }
 
     startTransition(async () => {
       const res = await createResponse(fd);
@@ -100,6 +66,36 @@ export function ResponseForm({
       setSubmitted(true);
       router.refresh();
     });
+  }
+
+  if (submitted) {
+    return (
+      <div className="space-y-4 rounded-3xl border border-[color:var(--color-sage-300)] bg-[color:var(--color-sage-100)]/60 p-6 text-center sm:p-8">
+        <p className="font-serif text-xl italic text-[color:var(--color-sage-700)]">
+          Sent.
+        </p>
+        <p className="mx-auto max-w-sm text-sm text-[color:var(--color-ink-700)]">
+          {authorName} can pin it if it lands.
+        </p>
+        {!isSignedIn ? (
+          <div className="mt-4 rounded-2xl bg-[color:var(--color-ink-900)] p-5 text-left text-[color:var(--color-cream-100)]">
+            <p className="font-serif text-base">
+              Want one of these for yourself?
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--color-cream-200)]/80">
+              Make a profile and ask the people in your life how they actually
+              see you. Takes 30 seconds.
+            </p>
+            <Link
+              href="/onboarding"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-cream-50)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-ink-900)] hover:bg-[color:var(--color-sage-300)]"
+            >
+              Make a profile <ArrowRight size={14} />
+            </Link>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -113,6 +109,7 @@ export function ResponseForm({
         </p>
         <p className="mt-1 text-xs text-[color:var(--color-ink-400)]">
           Be specific. Aim for the kind of thing only you would say.
+          {!isSignedIn ? " No account needed." : ""}
         </p>
         <textarea
           value={text}
@@ -128,6 +125,39 @@ export function ResponseForm({
         </div>
       </div>
 
+      {!isSignedIn ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-[color:var(--color-ink-700)]">
+              Your first name
+            </span>
+            <input
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              placeholder="So they know it's you"
+              maxLength={40}
+              required
+              className="w-full rounded-xl border border-[color:var(--color-ink-200)] bg-[color:var(--color-cream-50)] px-3 py-2.5 text-[15px] text-[color:var(--color-ink-900)] placeholder:text-[color:var(--color-ink-300)] focus:border-[color:var(--color-sage-300)] focus:outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-[color:var(--color-ink-700)]">
+              Email{" "}
+              <span className="font-normal text-[color:var(--color-ink-400)]">
+                (optional)
+              </span>
+            </span>
+            <input
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              type="email"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-[color:var(--color-ink-200)] bg-[color:var(--color-cream-50)] px-3 py-2.5 text-[15px] text-[color:var(--color-ink-900)] placeholder:text-[color:var(--color-ink-300)] focus:border-[color:var(--color-sage-300)] focus:outline-none"
+            />
+          </label>
+        </div>
+      ) : null}
+
       <div>
         <p className="text-sm font-medium text-[color:var(--color-ink-700)]">
           Tag a trait or two
@@ -141,7 +171,7 @@ export function ResponseForm({
               key={t}
               trait={t}
               selected={traits.includes(t)}
-              onClick={() => handleToggle(t)}
+              onClick={() => toggle(t)}
             />
           ))}
         </div>
@@ -165,13 +195,27 @@ export function ResponseForm({
 
         <button
           type="submit"
-          disabled={tooShort || pending}
+          disabled={tooShort || guestNameMissing || pending}
           className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] transition hover:bg-[color:var(--color-sage-700)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send size={14} />
           {pending ? "Sending…" : "Send reflection"}
         </button>
       </div>
+
+      {!isSignedIn ? (
+        <p className="text-center text-xs text-[color:var(--color-ink-400)]">
+          By sending, you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-[color:var(--color-ink-700)]">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline hover:text-[color:var(--color-ink-700)]">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      ) : null}
     </form>
   );
 }

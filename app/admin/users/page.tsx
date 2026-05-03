@@ -69,6 +69,11 @@ export default async function AdminUsersPage({
                           admin
                         </span>
                       ) : null}
+                      {u.banned ? (
+                        <span className="ml-1 rounded-full bg-[color:var(--color-amber-100)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[color:var(--color-amber-500)]">
+                          banned
+                        </span>
+                      ) : null}
                     </div>
                     <div className="truncate text-xs text-[color:var(--color-ink-400)]">
                       @{u.username} · {u.email}
@@ -79,6 +84,7 @@ export default async function AdminUsersPage({
                   userId={u.id}
                   username={u.username}
                   isAdmin={u.role === "admin"}
+                  banned={u.banned}
                 />
               </div>
               <div className="mt-2 flex flex-wrap gap-3 text-xs text-[color:var(--color-ink-400)]">

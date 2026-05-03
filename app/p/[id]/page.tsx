@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPromptById, timeAgo } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,6 +11,37 @@ import { ShareCard } from "@/components/share-card";
 import type { PromptCategory } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const prompt = await getPromptById(id);
+  if (!prompt) {
+    return { title: "Reflection · Do Güd" };
+  }
+  const title = `${prompt.author.name} is asking: “${prompt.question}”`;
+  const description = "Write a specific, honest reflection. No likes, no scores.";
+  const ogUrl = `/api/og/p/${prompt.id}`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      images: [{ url: ogUrl, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogUrl],
+    },
+  };
+}
 
 export default async function PromptDetailPage({
   params,
@@ -108,7 +140,9 @@ export default async function PromptDetailPage({
               key={r.id}
               response={r}
               responder={r.responder}
+              guestName={r.guestName}
               canPin={isAuthor}
+              canReport={!!me}
             />
           ))}
         </div>
