@@ -80,12 +80,12 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
   const avatarSeed =
     (formData.get("avatarSeed") as string | null) ||
     Math.random().toString(36).slice(2);
-  const ageOk = formData.get("age13") === "on";
+  const ageOk = formData.get("age18") === "on";
   const tosOk = formData.get("tos") === "on";
 
   const username = usernameRaw.toLowerCase().replace(/[^a-z0-9_]/g, "");
 
-  if (!ageOk) return { ok: false, error: "You must be 13 or older to use Do Güd." };
+  if (!ageOk) return { ok: false, error: "You must be 18 or older to use Do Güd." };
   if (!tosOk) return { ok: false, error: "You need to agree to the Terms and Privacy Policy." };
   if (!name) return { ok: false, error: "Add your name." };
   if (!USERNAME_RE.test(username)) {

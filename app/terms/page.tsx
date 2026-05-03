@@ -25,10 +25,10 @@ export default function TermsPage() {
       </Section>
 
       <Section title="2. Eligibility">
-        You must be 13 years of age or older to create an account. If you are
-        under 18, you must have a parent or guardian&apos;s permission. If
-        you&apos;re using Do Güd on behalf of an organization, you confirm you
-        have the authority to bind that organization to these Terms.
+        You must be 18 years of age or older to create an account. By signing
+        up, you confirm you are at least 18. If you&apos;re using Do Güd on
+        behalf of an organization, you confirm you have the authority to bind
+        that organization to these Terms.
       </Section>
 
       <Section title="3. Your account">

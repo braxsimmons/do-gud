@@ -116,10 +116,10 @@ export default function PrivacyPage() {
         retain copies for up to 60 days.
       </Section>
 
-      <Section title="Children">
-        Do Güd is not directed at children under 13. If we learn we&apos;ve
-        collected personal information from a child under 13, we&apos;ll
-        delete it.
+      <Section title="Minors">
+        Do Güd is intended for adults aged 18 and over. We don&apos;t
+        knowingly collect information from anyone under 18. If we learn an
+        account belongs to someone under 18, we&apos;ll delete it.
       </Section>
 
       <Section title="Region-specific rights">

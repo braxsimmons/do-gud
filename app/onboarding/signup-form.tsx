@@ -12,7 +12,7 @@ export function SignUpForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [age13, setAge13] = useState(false);
+  const [age18, setAge18] = useState(false);
   const [tos, setTos] = useState(false);
   const [seedKey, setSeedKey] = useState(() =>
     Math.random().toString(36).slice(2),
@@ -21,7 +21,7 @@ export function SignUpForm() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    if (!age13) return setError("You must be 13 or older to use Do Güd.");
+    if (!age18) return setError("You must be 18 or older to use Do Güd.");
     if (!tos) return setError("Please agree to the Terms and Privacy Policy.");
     const fd = new FormData(e.currentTarget);
     fd.set("avatarSeed", seedKey);
@@ -111,12 +111,12 @@ export function SignUpForm() {
         <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[color:var(--color-ink-700)]">
           <input
             type="checkbox"
-            name="age13"
-            checked={age13}
-            onChange={(e) => setAge13(e.target.checked)}
+            name="age18"
+            checked={age18}
+            onChange={(e) => setAge18(e.target.checked)}
             className="mt-0.5 h-4 w-4 rounded accent-[color:var(--color-sage-700)]"
           />
-          <span>I&apos;m 13 or older.</span>
+          <span>I&apos;m 18 or older.</span>
         </label>
         <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[color:var(--color-ink-700)]">
           <input
@@ -161,7 +161,7 @@ export function SignUpForm() {
         </Link>
         <button
           type="submit"
-          disabled={pending || !age13 || !tos}
+          disabled={pending || !age18 || !tos}
           className="rounded-full bg-[color:var(--color-ink-900)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-cream-50)] transition hover:bg-[color:var(--color-sage-700)] disabled:opacity-50"
         >
           {pending ? "Creating…" : "Create profile"}
